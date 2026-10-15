@@ -53,7 +53,7 @@
   const id = (params.get('m') || '').replace(/[^a-zA-Z0-9_-]/g, '');
   const $ = (s) => document.getElementById(s);
   const base = 'm/' + id + '/';
-  const videoUrl = base + 'video.mov';
+  const videoUrl = base + 'video.MOV';
   let arVideo = null;
 
   function showMsg(text) { const m = $('msg'); m.textContent = text; m.classList.remove('hidden'); }
