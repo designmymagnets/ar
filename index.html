@@ -4,139 +4,93 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Design My Magnets</title>
-<meta name="theme-color" content="#111111">
 <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 <style>
-  :root { --red: #d62700; }
-  html, body { margin: 0; height: 100%; background: transparent; color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
-  #stage { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
-  #stage video { object-fit: cover; }
-  #hint { position: fixed; z-index: 10; left: 50%; transform: translateX(-50%);
-    top: calc(env(safe-area-inset-top) + 16px); white-space: nowrap; transition: opacity .3s; }
-  #bottom { position: fixed; z-index: 10; left: 0; right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + 20px);
-    display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  #buttons { display: flex; gap: 10px; justify-content: center; }
-  .pill { background: rgba(0,0,0,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border-radius: 999px; padding: 10px 18px; font-size: 15px; text-align: center; }
-  button { border: 0; border-radius: 999px; padding: 12px 18px; font-size: 15px; font-weight: 600; color: #fff;
-    background: rgba(0,0,0,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-  button.primary { background: var(--red); }
-  .gone { visibility: hidden; opacity: 0; }
+  html { background: #111; }
+  body { margin: 0; background: none; color: #fff; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .pill { background: rgba(0,0,0,.6); border-radius: 999px; padding: 10px 18px; font-size: 15px; }
+  #hint { position: fixed; z-index: 10; top: 16px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  #bottom { position: fixed; z-index: 10; left: 0; right: 0; bottom: 24px;
+    display: flex; justify-content: center; gap: 10px; }
+  button { border: 0; border-radius: 999px; padding: 12px 18px; font-size: 15px; font-weight: 600;
+    color: #fff; background: rgba(0,0,0,.6); }
+  button.primary { background: #d62700; }
   .hidden { display: none !important; }
-  #brand { font-size: 12px; opacity: .7; color: #fff; text-decoration: none; }
-  #full { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; z-index: 20; }
-  #closeFull { position: fixed; top: calc(env(safe-area-inset-top) + 12px); right: 12px; z-index: 21; }
+  #full { position: fixed; inset: 0; width: 100%; height: 100%; background: #000; z-index: 20; }
+  #closeFull { position: fixed; top: 12px; right: 12px; z-index: 21; }
   #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    text-align: center; padding: 24px; z-index: 30; background: #111; font-size: 17px; line-height: 1.4; }
+    text-align: center; padding: 24px; z-index: 30; background: #111; font-size: 17px; }
 </style>
 </head>
 <body>
 
-<div id="stage"></div>
-
 <div id="hint" class="pill">Point your camera at the magnet</div>
 <div id="bottom">
-  <div id="buttons">
-    <button id="soundBtn" class="primary gone">Tap for sound</button>
-    <button id="fullBtn">Watch full screen</button>
-  </div>
-  <a id="brand" href="https://designmymagnets.ca">designmymagnets.ca</a>
+  <button id="soundBtn" class="primary hidden">Tap for sound</button>
+  <button id="fullBtn">Watch full screen</button>
 </div>
-
 <video id="full" class="hidden" playsinline webkit-playsinline controls></video>
 <button id="closeFull" class="hidden">Close</button>
 <div id="msg" class="hidden"></div>
 
 <script>
 (function () {
-  const params = new URLSearchParams(location.search);
-  const id = (params.get('m') || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  const id = (new URLSearchParams(location.search).get('m') || '').replace(/[^a-zA-Z0-9_-]/g, '');
   const $ = (s) => document.getElementById(s);
   const base = 'm/' + id + '/';
   let videoUrl = base + 'video.mp4';
   let arVideo = null;
 
-  function showMsg(text) { const m = $('msg'); m.textContent = text; m.classList.remove('hidden'); }
-
-  function playFull(autoplay) {
+  function showMsg(t) { $('msg').textContent = t; $('msg').classList.remove('hidden'); }
+  function playFull() {
     if (arVideo) arVideo.pause();
     const v = $('full');
     if (!v.src) v.src = videoUrl;
-    v.classList.remove('hidden');
-    $('closeFull').classList.remove('hidden');
-    if (autoplay !== false) v.play().catch(() => {});
+    v.classList.remove('hidden'); $('closeFull').classList.remove('hidden');
+    v.muted = false; v.play().catch(() => {});
   }
-
-  $('fullBtn').onclick = () => { $('full').muted = false; playFull(); };
-  $('closeFull').onclick = () => {
-    const f = $('full'); f.pause();
-    f.classList.add('hidden'); $('closeFull').classList.add('hidden');
-  };
-  $('soundBtn').onclick = () => {
-    if (!arVideo) return;
-    arVideo.muted = false; arVideo.play().catch(() => {});
-    $('soundBtn').classList.add('gone');
-  };
+  $('fullBtn').onclick = playFull;
+  $('closeFull').onclick = () => { $('full').pause(); $('full').classList.add('hidden'); $('closeFull').classList.add('hidden'); };
+  $('soundBtn').onclick = () => { if (arVideo) { arVideo.muted = false; arVideo.play(); } $('soundBtn').classList.add('hidden'); };
 
   async function init() {
-    if (!id) { showMsg('This link is missing its magnet code. Try scanning the QR again.'); return; }
+    if (!id) { showMsg('This link is missing its magnet code.'); return; }
 
-    let info = { ratio: 90 / 65 };
-    try {
-      const r = await fetch(base + 'info.json', { cache: 'no-cache' });
-      if (r.ok) info = Object.assign(info, await r.json());
-    } catch (e) {}
+    let ratio = 90 / 65;
+    try { const r = await fetch(base + 'info.json'); if (r.ok) ratio = Number((await r.json()).ratio) || ratio; } catch (e) {}
 
     const names = ['video.mp4', 'video.MP4', 'video.mov', 'video.MOV', 'Video.mp4', 'Video.MP4', 'Video.mov', 'Video.MOV'];
     let found = false;
     for (const n of names) {
-      try {
-        const h = await fetch(base + n, { method: 'HEAD' });
-        if (h.ok) { videoUrl = base + n; found = true; break; }
-      } catch (e) {}
+      try { const h = await fetch(base + n, { method: 'HEAD' }); if (h.ok) { videoUrl = base + n; found = true; break; } } catch (e) {}
     }
     if (!found) { showMsg("We couldn't find this video. Contact hi@designmymagnets.ca"); return; }
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { playFull(false); return; }
-
-    const ratio = Number(info.ratio) || 90 / 65;
-    $('stage').innerHTML =
+    const wrap = document.createElement('div');
+    wrap.innerHTML =
       '<a-scene mindar-image="imageTargetSrc: ' + base + 'target.mind; uiScanning: no; uiLoading: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001"' +
-      ' color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true"' +
-      ' vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" loading-screen="enabled: false" embedded' +
-      ' style="position:absolute;inset:0;width:100%;height:100%;">' +
-        '<a-assets timeout="5000">' +
-          '<video id="arvid" src="' + videoUrl + '" preload="auto" loop muted playsinline webkit-playsinline crossorigin="anonymous"></video>' +
-        '</a-assets>' +
+      ' color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false"' +
+      ' device-orientation-permission-ui="enabled: false" loading-screen="enabled: false">' +
+        '<a-assets><video id="arvid" src="' + videoUrl + '" preload="auto" loop muted playsinline webkit-playsinline crossorigin="anonymous"></video></a-assets>' +
         '<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>' +
         '<a-entity id="target" mindar-image-target="targetIndex: 0">' +
           '<a-video src="#arvid" width="1" height="' + ratio + '" position="0 0 0"></a-video>' +
         '</a-entity>' +
       '</a-scene>';
+    document.body.appendChild(wrap.firstChild);
 
+    arVideo = $('arvid');
     const scene = document.querySelector('a-scene');
-    arVideo = document.getElementById('arvid');
-    const target = document.getElementById('target');
-
-    scene.addEventListener('arError', () => {
-      $('hint').textContent = "Camera isn't available, playing full screen";
-      playFull(false);
-    });
-
-    target.addEventListener('targetFound', () => {
-      $('hint').classList.add('gone');
+    scene.addEventListener('arError', () => { $('hint').textContent = "Camera isn't available"; });
+    $('target').addEventListener('targetFound', () => {
+      $('hint').classList.add('hidden');
       arVideo.play().catch(() => {});
-      if (arVideo.muted) $('soundBtn').classList.remove('gone');
+      if (arVideo.muted) $('soundBtn').classList.remove('hidden');
     });
-    target.addEventListener('targetLost', () => {
-      arVideo.pause();
-      $('hint').classList.remove('gone');
-    });
+    $('target').addEventListener('targetLost', () => { arVideo.pause(); $('hint').classList.remove('hidden'); });
   }
-
   init();
 })();
 </script>
